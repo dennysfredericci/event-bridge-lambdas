@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  ApiGatewayName:
+    Type: String
+    Default: 'event-bridge-gw'
+    Description: 'Name of the API Gateway'
+
+  StageName:
+    Type: String
+    Default: 'dev'
+    Description: 'Stage name for the API Gateway deployment'
+
+  LambdaFunctionName:
+    Type: String
+    Default: 'event-bridge-lambda'
+    Description: 'Name of the Lambda function'
+
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name where the Lambda code is stored'
+    Default: 'lambda-deployment-event-bridge'
+
+  ApiGatewayLambdaS3Key:
+    Type: String
+    Description: 'S3 key for the Lambda code'
+    Default: 'api-gateway-lambda-0.0.1-SNAPSHOT.jar'
+
+  LambdaTimeout:
+    Type: Number
+    Default: 120
+    Description: 'Timeout for the Lambda function in seconds'
+
+Resources:
+  ApiGatewayRestApi:
+    Type: 'AWS::ApiGateway::RestApi'
+    Properties:
+      Name: !Ref ApiGatewayName
+
+  ApiGatewayResource:
+    Type: 'AWS::ApiGateway::Resource'
+    Properties:
+      ParentId: !GetAtt
+        - ApiGatewayRestApi
+        - RootResourceId
+      PathPart: '{proxy+}'
+      RestApiId: !Ref ApiGatewayRestApi
+
+  ApiGatewayMethod:
+    Type: 'AWS::ApiGateway::Method'
+    Properties:
+      AuthorizationType: 'NONE'
+      HttpMethod: 'ANY'
+      ResourceId: !Ref ApiGatewayResource
+      RestApiId: !Ref ApiGatewayRestApi
+      Integration:
+        IntegrationHttpMethod: 'POST'
+        Type: 'AWS_PROXY'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations'
+
+  ApiGatewayDeployment:
+    Type: 'AWS::ApiGateway::Deployment'
+    DependsOn: ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref ApiGatewayRestApi
+      StageName: !Ref StageName
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'LambdaDynamoDBPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Handler: 'org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: !Ref ApiGatewayLambdaS3Key
+      Runtime: 'java21'
+      Timeout: !Ref LambdaTimeout
+      MemorySize: 512
+      Environment:
+        Variables:
+          MAIN_CLASS: 'com.devoctans.lambda.Application'
+
+  LambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaFunction
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGatewayRestApi}/*'
+
+  LambdaLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
+      RetentionInDays: 3
+
+Outputs:
+  ApiUrl:
+    Description: 'API Gateway endpoint URL for stage'
+    Value: !Sub 'https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/execute'
