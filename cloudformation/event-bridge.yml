@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template to create an EventBridge with a rule and a target.
+
+Resources:
+  EventBridgeBus:
+    Type: 'AWS::Events::EventBus'
+    Properties:
+      Name: 'CustomEventBus'
+      LogConfig:
+        IncludeDetail: FULL
+        Level: TRACE
+
+  EventBridgeLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/events/${EventBridgeBus}'
+      RetentionInDays: 3
+
+  EventBridgeLoggingRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'events.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'EventBridgeLoggingPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/events/${EventBridgeBus}:*'
+
+  EventBridgeLoggingPolicy:
+    Type: 'AWS::Events::EventBusPolicy'
+    Properties:
+      EventBusName: !Ref EventBridgeBus
+      StatementId: 'EnableLogging'
+      Action: 'events:PutEvents'
+      Principal: '*'
+#      Condition:
+#        StringEquals:
+#          aws:SourceArn: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/events/${EventBridgeBus}'
+
+Outputs:
+  EventBridgeBusName:
+    Value: !Ref EventBridgeBus

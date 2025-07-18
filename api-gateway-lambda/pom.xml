@@ -41,6 +41,12 @@
         </dependency>
 
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>eventbridge</artifactId>
+            <version>2.20.0</version> <!-- Use the latest version -->
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -81,7 +87,6 @@
                             <goal>create-timestamp</goal>
                         </goals>
                         <configuration>
-                            <!--							<timestampFormat>yyyyMMdd-HHmmss</timestampFormat>-->
                             <timestampPropertyName>build.datetime</timestampPropertyName>
                         </configuration>
                     </execution>

@@ -30,6 +30,10 @@ Parameters:
     Default: 120
     Description: 'Timeout for the Lambda function in seconds'
 
+  EventBusName:
+    Type: String
+    Description: 'Name of the EventBridge bus'
+
 Resources:
   ApiGatewayRestApi:
     Type: 'AWS::ApiGateway::RestApi'
@@ -85,6 +89,15 @@ Resources:
                   - 'logs:CreateLogStream'
                   - 'logs:PutLogEvents'
                 Resource: '*'
+        - PolicyName: 'LambdaEventBridgePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'events:PutEvents'
+                Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+
 
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
@@ -101,6 +114,7 @@ Resources:
       Environment:
         Variables:
           MAIN_CLASS: 'br.com.fredericci.ApiGateway'
+          EVENT_BUS_NAME: !Ref EventBusName
 
   LambdaPermission:
     Type: 'AWS::Lambda::Permission'

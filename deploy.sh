@@ -1,4 +1,4 @@
-mvn clean install
+#mvn clean install
 
 API_GW_JAR_FILE=$(find ./api-gateway-lambda/target -name "api-gateway-lambda-*-aws-*.jar")
 
@@ -23,19 +23,13 @@ else
   echo "File uploaded to S3."
 fi
 
+aws s3 cp ./cloudformation/api-lambda.yml   s3://lambda-deployment-event-bridge
+aws s3 cp ./cloudformation/event-bridge.yml s3://lambda-deployment-event-bridge
+
+
 SAM_PARAMETERS=$(yq -r 'to_entries | map("ParameterKey=\(.key),ParameterValue=\(.value)") | join(" ")' ./cloudformation/parameters.yml)
 
 # Replace placeholders in the parameters string using sed
 SAM_PARAMETERS=$(echo "$SAM_PARAMETERS" | sed "s/ParameterValue=API_GW_JAR_FILE/ParameterValue=$BASE_API_GW_JAR_FILE/g")
 
-echo ""
-echo "Parameters:"
-echo $SAM_PARAMETERS
-echo ""
-
-sam deploy --template-file ./cloudformation/api-lambda.yml --stack-name event-bridge-lambdas --parameter-overrides $SAM_PARAMETERS --capabilities CAPABILITY_IAM
-
-#mv ./target/spring-lambda-0.0.1-SNAPSHOT-aws.jar ./target/spring-lambda.jar
-#aws s3 cp ./target/spring-lambda.jar s3://lambda-deployment-fredericci
-#SAM_PARAMETERS=$(yq -r 'to_entries | map("ParameterKey=\(.key),ParameterValue=\(.value)") | join(" ")' parameters.yml)
-#sam deploy --template-file ./template.yaml --stack-name lambdas-benchmark --parameter-overrides $SAM_PARAMETERS --capabilities CAPABILITY_IAM
+sam deploy --template-file ./cloudformation/template.yml --stack-name event-bridge-lambdas --parameter-overrides $SAM_PARAMETERS --capabilities CAPABILITY_IAM

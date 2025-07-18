@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+
+  ApiGatewayLambdaS3Key:
+    Type: String
+
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name where the Lambda code is stored'
+    Default: 'lambda-deployment-event-bridge'
+
+Resources:
+
+  EventBusStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub 'https://${S3BucketName}.s3.eu-west-1.amazonaws.com/event-bridge.yml'
+
+  ApiLambdaStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub 'https://${S3BucketName}.s3.eu-west-1.amazonaws.com/api-lambda.yml'
+      Parameters:
+        ApiGatewayLambdaS3Key: !Ref ApiGatewayLambdaS3Key
+        EventBusName: !GetAtt EventBusStack.Outputs.EventBridgeBusName
+
+Outputs:
+  ApiUrl:
+    Description: Api Gateway URL
+    Value: !GetAtt ApiLambdaStack.Outputs.ApiUrl
