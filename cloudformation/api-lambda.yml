@@ -55,7 +55,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: 'POST'
         Type: 'AWS_PROXY'
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${LambdaFunctionName}/invocations'
 
   ApiGatewayDeployment:
     Type: 'AWS::ApiGateway::Deployment'
@@ -100,7 +100,7 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
-          MAIN_CLASS: 'com.devoctans.lambda.Application'
+          MAIN_CLASS: 'br.com.fredericci.ApiGateway'
 
   LambdaPermission:
     Type: 'AWS::Lambda::Permission'

@@ -4,7 +4,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 @SpringBootApplication
@@ -28,3 +27,5 @@ public class ApiGateway {
     public record OutputEvent(String status) {
     }
 }
+
+// curl -H "Content-Type: application/json"  https://pegp5o0vlh.execute-api.eu-west-1.amazonaws.com/dev/execute  -d '{ "type": "FRAUD_DETECTION", "id": "01"}'

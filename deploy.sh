@@ -1,4 +1,4 @@
-#mvn clean install
+mvn clean install
 
 API_GW_JAR_FILE=$(find ./api-gateway-lambda/target -name "api-gateway-lambda-*-aws-*.jar")
 
@@ -16,7 +16,12 @@ else
   echo "Bucket already exists."
 fi
 
-aws s3 cp "$API_GW_JAR_FILE" s3://lambda-deployment-fredericci
+if aws s3 ls "s3://lambda-deployment-event-bridge/$BASE_API_GW_JAR_FILE" > /dev/null 2>&1; then
+  echo "File already exists in S3. Skipping upload."
+else
+  aws s3 cp "$API_GW_JAR_FILE" s3://lambda-deployment-event-bridge
+  echo "File uploaded to S3."
+fi
 
 SAM_PARAMETERS=$(yq -r 'to_entries | map("ParameterKey=\(.key),ParameterValue=\(.value)") | join(" ")' ./cloudformation/parameters.yml)
 
