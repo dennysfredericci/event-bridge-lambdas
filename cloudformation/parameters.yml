@@ -1,1 +1,2 @@
 ApiGatewayLambdaS3Key: API_GW_JAR_FILE
+EventProcessorLambdaS3Key: EVT_PROCESSOR_JAR_FILE

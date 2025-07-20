@@ -38,5 +38,7 @@
 
     <modules>
         <module>api-gateway-lambda</module>
+        <module>event-processor-lambda</module>
     </modules>
+
 </project>
