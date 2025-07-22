@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+
+  StageName:
+    Type: String
+    Default: 'dev'
+    Description: 'Stage name for the API Gateway deployment'
+
+  LambdaFunctionName:
+    Type: String
+    Default: 'event-processor-lambda'
+    Description: 'Name of the Lambda function'
+
+  S3BucketName:
+    Type: String
+    Description: 'S3 bucket name where the Lambda code is stored'
+    Default: 'lambda-deployment-event-bridge'
+
+  DownloadFileLambdaS3Key:
+    Type: String
+    Description: 'S3 key for the Lambda code'
+
+  LambdaTimeout:
+    Type: Number
+    Default: 120
+    Description: 'Timeout for the Lambda function in seconds'
+
+Resources:
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'lambda.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'LambdaDynamoDBPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:*'
+                Resource: '*'
+
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Handler: 'org.springframework.cloud.function.adapter.aws.FunctionInvoker::handleRequest'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref S3BucketName
+        S3Key: !Ref DownloadFileLambdaS3Key
+      Runtime: 'java21'
+      Timeout: !Ref LambdaTimeout
+      MemorySize: 512
+      Environment:
+        Variables:
+          MAIN_CLASS: 'br.com.fredericci.DownloadFile.main'
+
+  EventProcessorLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt EventProcessorRule.Arn
+
+
+  LambdaLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
+      RetentionInDays: 3
+
+
+Outputs:
+  DownloadFileLambdaArn:
+    Value: !GetAtt LambdaFunction.Arn
+  DownloadFileLambdaName:
+    Value: !Ref LambdaFunction
