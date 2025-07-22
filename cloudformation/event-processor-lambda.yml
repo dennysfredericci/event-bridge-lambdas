@@ -29,6 +29,12 @@ Parameters:
     Type: String
     Description: 'Name of the EventBridge bus'
 
+  DownloadFileLambdaArn:
+    Type: String
+
+  DownloadFileLambdaName:
+    Type: String
+
 Resources:
 
   LambdaExecutionRole:
@@ -76,6 +82,15 @@ Resources:
         Variables:
           MAIN_CLASS: 'br.com.fredericci.EventProcessor'
           EVENT_BUS_NAME: !Ref EventBusName
+          DOWNLOAD_FILE_LAMBDA_ARN: !Ref DownloadFileLambdaArn
+
+  EventProcessorInvokePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !Ref DownloadFileLambdaName
+      Action: 'lambda:InvokeFunction'
+      Principal: 'lambda.amazonaws.com'
+      SourceArn: !GetAtt LambdaFunction.Arn
 
   EventProcessorLambdaPermission:
     Type: 'AWS::Lambda::Permission'

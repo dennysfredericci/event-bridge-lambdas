@@ -5,6 +5,12 @@ Parameters:
   ApiGatewayLambdaS3Key:
     Type: String
 
+  EventProcessorLambdaS3Key:
+    Type: String
+
+  DownloadFileLambdaS3Key:
+    Type: String
+
   S3BucketName:
     Type: String
     Description: 'S3 bucket name where the Lambda code is stored'
@@ -16,6 +22,23 @@ Resources:
     Type: 'AWS::CloudFormation::Stack'
     Properties:
       TemplateURL: !Sub 'https://${S3BucketName}.s3.eu-west-1.amazonaws.com/event-bridge.yml'
+
+  DownloadFileLambdaStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub 'https://${S3BucketName}.s3.eu-west-1.amazonaws.com/download-file-lambda.yml'
+      Parameters:
+        DownloadFileLambdaS3Key: !Ref DownloadFileLambdaS3Key
+
+  EventProcessorStack:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub 'https://${S3BucketName}.s3.eu-west-1.amazonaws.com/event-processor-lambda.yml'
+      Parameters:
+        EventProcessorLambdaS3Key: !Ref EventProcessorLambdaS3Key
+        EventBusName: !GetAtt EventBusStack.Outputs.EventBridgeBusName
+        DownloadFileLambdaName:  !GetAtt DownloadFileLambdaStack.Outputs.DownloadFileLambdaName
+        DownloadFileLambdaArn:  !GetAtt DownloadFileLambdaStack.Outputs.DownloadFileLambdaArn
 
   ApiLambdaStack:
     Type: 'AWS::CloudFormation::Stack'

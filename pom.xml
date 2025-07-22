@@ -39,6 +39,7 @@
     <modules>
         <module>api-gateway-lambda</module>
         <module>event-processor-lambda</module>
+        <module>download-file-lambda</module>
     </modules>
 
 </project>

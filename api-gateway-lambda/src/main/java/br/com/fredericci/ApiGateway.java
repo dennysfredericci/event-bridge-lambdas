@@ -17,20 +17,21 @@ public class ApiGateway {
     }
     
     @Bean
-    public Function<InputEvent, OutputEvent> uppercase() {
+    public Function<InputEvent, OutputEvent> publishEvent() {
+        
         return inputEvent -> {
             try (EventBridgeClient eventBridgeClient = EventBridgeClient.create()) {
                 PutEventsRequestEntry entry = PutEventsRequestEntry.builder()
-                    .eventBusName(System.getenv("EVENT_BUS_NAME"))
-                    .source("custom.api.gateway")
-                    .detailType("InputEvent")
-                    .detail("{\"type\":\"" + inputEvent.type() + "\",\"id\":\"" + inputEvent.id() + "\"}")
-                    .build();
-    
+                        .eventBusName(System.getenv("EVENT_BUS_NAME"))
+                        .source("custom.api.gateway")
+                        .detailType("InputEvent")
+                        .detail("{\"id\":\"" + inputEvent.id() + "\"}")
+                        .build();
+                
                 PutEventsRequest request = PutEventsRequest.builder()
-                    .entries(entry)
-                    .build();
-    
+                        .entries(entry)
+                        .build();
+                
                 eventBridgeClient.putEvents(request);
                 System.out.println("Event published to EventBridge: " + inputEvent);
             } catch (Exception e) {
@@ -41,7 +42,7 @@ public class ApiGateway {
         };
     }
     
-    public record InputEvent(String type, String id) {
+    public record InputEvent(String id) {
     }
     
     public record OutputEvent(String status) {

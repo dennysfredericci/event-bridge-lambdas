@@ -37,6 +37,6 @@ SAM_PARAMETERS=$(yq -r 'to_entries | map("ParameterKey=\(.key),ParameterValue=\(
 
 # Replace placeholders in the parameters string using sed
 SAM_PARAMETERS=$(echo "$SAM_PARAMETERS" | sed "s/ParameterValue=API_GW_JAR_FILE/ParameterValue=$BASE_API_GW_JAR_FILE/g")
-SAM_PARAMETERS=$(echo "$SAM_PARAMETERS" | sed "s/ParameterValue=EventProcessorLambdaS3Key/ParameterValue=$BASE_EVT_PROCESSOR_JAR_FILE/g")
+SAM_PARAMETERS=$(echo "$SAM_PARAMETERS" | sed "s/ParameterValue=EVT_PROCESSOR_JAR_FILE/ParameterValue=$BASE_EVT_PROCESSOR_JAR_FILE/g")
 
 sam deploy --template-file ./cloudformation/template.yml --stack-name event-bridge-lambdas --parameter-overrides $SAM_PARAMETERS --capabilities CAPABILITY_IAM

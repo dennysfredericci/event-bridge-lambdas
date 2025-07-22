@@ -37,14 +37,6 @@ Resources:
                   - 'logs:PutLogEvents'
                 Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/events/${EventBridgeBus}:*'
 
-#  EventBridgeLoggingPolicy:
-#    Type: 'AWS::Events::EventBusPolicy'
-#    Properties:
-#      EventBusName: !Ref EventBridgeBus
-#      StatementId: 'EnableLogging'
-#      Action: 'events:PutEvents'
-#      Principal: '*'
-#      Resource: !GetAtt EventBridgeBus.Arn
 
 Outputs:
   EventBridgeBusName:
