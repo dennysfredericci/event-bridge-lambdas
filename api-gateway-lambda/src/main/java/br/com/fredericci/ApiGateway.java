@@ -1,5 +1,6 @@
 package br.com.fredericci;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,8 @@ import java.util.function.Function;
 
 @SpringBootApplication
 public class ApiGateway {
+    
+    private ObjectMapper objectMapper = new ObjectMapper();
     
     public static void main(String[] args) {
         SpringApplication.run(ApiGateway.class, args);
@@ -25,7 +28,7 @@ public class ApiGateway {
                         .eventBusName(System.getenv("EVENT_BUS_NAME"))
                         .source("custom.api.gateway")
                         .detailType("InputEvent")
-                        .detail("{\"id\":\"" + inputEvent.id() + "\"}")
+                        .detail(objectMapper.writeValueAsString(inputEvent))
                         .build();
                 
                 PutEventsRequest request = PutEventsRequest.builder()

@@ -47,6 +47,10 @@ Resources:
             Principal:
               Service: 'lambda.amazonaws.com'
             Action: 'sts:AssumeRole'
+          - Effect: 'Allow'
+            Principal:
+              Service: 'scheduler.amazonaws.com'
+            Action: 'sts:AssumeRole'
       Policies:
         - PolicyName: 'LambdaDynamoDBPolicy'
           PolicyDocument:
@@ -64,6 +68,43 @@ Resources:
                 Action:
                   - 'events:PutEvents'
                 Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+        - PolicyName: 'LambdaInvokePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'lambda:InvokeFunction'
+                Resource: !Ref DownloadFileLambdaArn
+
+  LambdaExecutionScheduleRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'scheduler.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'LambdaEventBridgePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'events:PutEvents'
+                Resource: !Sub 'arn:aws:events:${AWS::Region}:${AWS::AccountId}:event-bus/${EventBusName}'
+        - PolicyName: 'LambdaInvokePolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'lambda:InvokeFunction'
+                Resource: !GetAtt LambdaFunction.Arn
+
 
 
   LambdaFunction:
@@ -112,6 +153,22 @@ Resources:
       Targets:
         - Arn: !GetAtt LambdaFunction.Arn
           Id: "EventProcessorTarget"
+
+  MyScheduledLambda:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Description: "Schedule to invoke a Lambda function daily"
+      GroupName: "default" # Or a custom schedule group name
+      Name: "MyDailyLambdaSchedule"
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      ScheduleExpression: "cron(0 12 * * ? *)" # Runs daily at 12:00 PM UTC
+      #ScheduleExpression: "cron(*/2 * * * ? *)" # Runs daily at 12:00 PM UTC
+      State: "ENABLED"
+      Target:
+        Arn: !GetAtt LambdaFunction.Arn # ARN of the Lambda function to invoke
+        Input: "{\"key\": \"value\"}" # Optional input payload for the target
+        RoleArn: !GetAtt LambdaExecutionScheduleRole.Arn # ARN of the IAM role for Scheduler
 
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'

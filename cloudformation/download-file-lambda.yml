@@ -8,7 +8,7 @@ Parameters:
 
   LambdaFunctionName:
     Type: String
-    Default: 'event-processor-lambda'
+    Default: 'download-file-lambda'
     Description: 'Name of the Lambda function'
 
   S3BucketName:
@@ -38,7 +38,7 @@ Resources:
               Service: 'lambda.amazonaws.com'
             Action: 'sts:AssumeRole'
       Policies:
-        - PolicyName: 'LambdaDynamoDBPolicy'
+        - PolicyName: 'LambdaLogsPolicy'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
@@ -46,6 +46,16 @@ Resources:
                 Action:
                   - 'logs:*'
                 Resource: '*'
+        - PolicyName: 'LambdaS3Policy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 's3:PutObject'
+                Resource:
+                  - !GetAtt DocumentsBucket.Arn
+                  - !Sub '${DocumentsBucket.Arn}/*'
 
   LambdaFunction:
     Type: 'AWS::Lambda::Function'
@@ -61,22 +71,19 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
-          MAIN_CLASS: 'br.com.fredericci.DownloadFile.main'
-
-  EventProcessorLambdaPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !Ref LambdaFunction
-      Action: 'lambda:InvokeFunction'
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt EventProcessorRule.Arn
-
+          MAIN_CLASS: 'br.com.fredericci.DownloadFile'
+          DOCUMENT_BUCKET_NAME: !Ref DocumentsBucket
 
   LambdaLogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: !Sub '/aws/lambda/${LambdaFunction}'
       RetentionInDays: 3
+
+  DocumentsBucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: 'event-bridge-documents'
 
 
 Outputs:
